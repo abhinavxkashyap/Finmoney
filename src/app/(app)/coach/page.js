@@ -151,7 +151,7 @@ export default function CoachPage() {
     }
   }, [messages]);
 
-  const handleSend = (text) => {
+  const handleSend = async (text) => {
     const userMessage = text || input;
     if (!userMessage.trim()) return;
 
@@ -162,17 +162,27 @@ export default function CoachPage() {
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const response = responses[userMessage] || {
-        content: `Great question! Based on your financial profile, I'd suggest focusing on reducing unnecessary expenses first. Your food delivery and impulse shopping habits alone account for ₹10,000/month in potential savings.\n\nWould you like me to create a personalized plan to redirect these funds into investments? I can show you exactly how much wealth you'd build over 5, 10, and 15 years.`,
-      };
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage }),
+      });
+      const data = await res.json();
 
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: response.content, timestamp: "Just now" },
+        { role: "assistant", content: data.response || "Sorry, I am having trouble connecting.", timestamp: "Just now" },
       ]);
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, an error occurred while connecting to my brain.", timestamp: "Just now" },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
 
   const formatMessage = (content) => {
